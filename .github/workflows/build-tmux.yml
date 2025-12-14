@@ -1,12 +1,12 @@
 name: Build tmux
 
 on:
-  # workflow_dispatch:
+  workflow_dispatch:
+  # TODO: Make tmux version an input parameter
   #   inputs:
   #     tmux_version:
   #       description: "tmux version to build (e.g. 3.3a)"
   #       required: true
-  push:
 
 env:
   TMUX_VERSION: "3.6a"
