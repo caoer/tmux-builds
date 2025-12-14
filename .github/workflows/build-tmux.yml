@@ -1,11 +1,12 @@
 name: Build tmux
 
 on:
-  workflow_dispatch:
-    inputs:
-      tmux_version:
-        description: "tmux version to build (e.g. 3.3a)"
-        required: true
+  # workflow_dispatch:
+  #   inputs:
+  #     tmux_version:
+  #       description: "tmux version to build (e.g. 3.3a)"
+  #       required: true
+  push:
 
 env:
   MUSL_VERSION: "1.2.5"
@@ -39,7 +40,8 @@ jobs:
       - name: Determine tmux version
         id: version
         run: |
-          echo "TMUX_VERSION=${{ github.event.inputs.tmux_version }}" >> $GITHUB_ENV
+          # echo "TMUX_VERSION=${{ github.event.inputs.tmux_version }}" >> $GITHUB_ENV
+          echo "TMUX_VERSION=3.6a" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -62,5 +64,12 @@ jobs:
       - name: Rename artifact
         run: |
           mkdir -p artifacts
-          cp out/artifa
+          cp out/artifacts/tmux \
+             artifacts/tmux-${TMUX_VERSION}-${{ matrix.triplet }}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmux-${TMUX_VERSION}-${{ matrix.triplet }}
+          path: artifacts/tmux-${TMUX_VERSION}-${{ matrix.triplet }}
+          if-no-files-found: error
