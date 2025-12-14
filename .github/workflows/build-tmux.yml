@@ -9,6 +9,7 @@ on:
   push:
 
 env:
+  TMUX_VERSION: "3.6a"
   MUSL_VERSION: "1.2.5"
   LIBEVENT_VERSION: "2.1.12"
   NCURSES_VERSION: "6.5"
@@ -37,12 +38,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Determine tmux version
-        id: version
-        run: |
-          # echo "TMUX_VERSION=${{ github.event.inputs.tmux_version }}" >> $GITHUB_ENV
-          echo "TMUX_VERSION=3.6a" >> $GITHUB_ENV
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -66,10 +61,12 @@ jobs:
           mkdir -p artifacts
           cp out/artifacts/tmux \
              artifacts/tmux-${TMUX_VERSION}-${{ matrix.triplet }}
+          ls -l artifacts/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tmux-${TMUX_VERSION}-${{ matrix.triplet }}
-          path: artifacts/tmux-${TMUX_VERSION}-${{ matrix.triplet }}
+          name: tmux-${{ env.TMUX_VERSION }}-x86_64-linux-musl
+          path: artifacts/tmux-${{ env.TMUX_VERSION }}-x86_64-linux-musl
           if-no-files-found: error
+
