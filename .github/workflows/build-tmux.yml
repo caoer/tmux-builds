@@ -1,0 +1,66 @@
+name: Build tmux
+
+on:
+  workflow_dispatch:
+    inputs:
+      tmux_version:
+        description: "tmux version to build (e.g. 3.3a)"
+        required: true
+
+env:
+  MUSL_VERSION: "1.2.5"
+  LIBEVENT_VERSION: "2.1.12"
+  NCURSES_VERSION: "6.5"
+  PREFIX: /build
+
+jobs:
+  build:
+    name: Build tmux (${{ matrix.triplet }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            triplet: x86_64-linux-musl
+          - platform: linux/arm64
+            arch: arm64
+            triplet: aarch64-linux-musl
+          - platform: linux/arm/v7
+            arch: armv7
+            triplet: arm-linux-musleabihf
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine tmux version
+        id: version
+        run: |
+          echo "TMUX_VERSION=${{ github.event.inputs.tmux_version }}" >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build tmux for ${{ matrix.platform }}
+        run: |
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            --build-arg TMUX_VERSION=${TMUX_VERSION} \
+            --build-arg MUSL_VERSION=${MUSL_VERSION} \
+            --build-arg LIBEVENT_VERSION=${LIBEVENT_VERSION} \
+            --build-arg NCURSES_VERSION=${NCURSES_VERSION} \
+            --build-arg PREFIX=${PREFIX} \
+            --output type=local,dest=out \
+            .
+
+      - name: Rename artifact
+        run: |
+          mkdir -p artifacts
+          cp out/artifa
+
