@@ -21,9 +21,6 @@ cd "ncurses-${NCURSES_VERSION}"
     --prefix=${PREFIX} \
     --includedir=${PREFIX}/include \
     --libdir=${PREFIX}/lib \
-    --enable-pc-files \
-    --with-pkg-config=${PREFIX}/lib/pkgconfig \
-    --with-pkg-config-libdir=${PREFIX}/lib/pkgconfig \
     --without-ada \
     --without-cxx \
     --without-cxx-binding \
