@@ -18,8 +18,10 @@ jobs:
         include:
           - arch: x86_64
             runs_on: ubuntu-24.04
+            binary_name: tmux-linux-x86_64-musl
           - arch: arm64
             runs_on: ubuntu-24.04-arm
+            binary_name: tmux-linux-arm64-musl
 
     runs-on: ${{ matrix.runs_on }}
 
@@ -74,11 +76,15 @@ jobs:
           echo "Killing test tmux session"
           ${{ env.PREFIX }}/bin/tmux kill-session -t test
 
+      - name: Rename tmux binary
+        run: |
+          cp ${{ env.PREFIX }}/bin/tmux ${{ matrix.binary_name }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tmux-linux-${{ matrix.arch }}-musl
-          path: ${{ env.PREFIX }}/bin/tmux
+          name: ${{ matrix.binary_name }}
+          path: ${{ matrix.binary_name }}
 
   build-macos:
     name: Build tmux (macos-${{ matrix.arch }})
@@ -89,8 +95,10 @@ jobs:
         include:
           - arch: x86_64
             runs_on: macos-15-intel
+            binary_name: tmux-macos-x86_64
           - arch: arm64
             runs_on: macos-15
+            binary_name: tmux-macos-arm64
 
 
     runs-on: ${{ matrix.runs_on }}
@@ -134,11 +142,15 @@ jobs:
           echo "Killing test tmux session"
           ${{ env.PREFIX }}/bin/tmux kill-session -t test
 
+      - name: Rename tmux binary
+        run: |
+          cp ${{ env.PREFIX }}/bin/tmux ${{ matrix.binary_name }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tmux-macos-${{ matrix.arch }}
-          path: ${{ env.PREFIX }}/bin/tmux
+          name: ${{ matrix.binary_name }}
+          path: ${{ matrix.binary_name }}
 
   create-release:
     needs: [build-linux, build-macos]
