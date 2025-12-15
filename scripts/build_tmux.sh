@@ -17,22 +17,42 @@ wget "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX
 tar xzf "tmux-${TMUX_VERSION}.tar.gz"
 cd "tmux-${TMUX_VERSION}"
 
-# TODO: Install and enable utf8proc on macos
-./configure \
-    --prefix=${PREFIX} \
-    --disable-utf8proc \
-    --includedir="${PREFIX}/include" \
-    --libdir="${PREFIX}/lib" \
-    CFLAGS="-I${PREFIX}/include" \
-    LDFLAGS="-L${PREFIX}/lib" \
-    CPPFLAGS="-I${PREFIX}/include" \
-    LIBEVENT_LIBS="-L${PREFIX}/lib -levent" \
-    LIBNCURSES_CFLAGS="-I${PREFIX}/include/ncurses" \
-    LIBNCURSES_LIBS="-L${PREFIX}/lib -lncurses" \
-    LIBTINFO_CFLAGS="-I${PREFIX}/include/ncurses" \
-    LIBTINFO_LIBS="-L${PREFIX}/lib -ltinfo"
+IS_MACOS=false
+if [[ "$(uname)" == "Darwin" ]]; then
+    IS_MACOS=true
+fi
 
-make -j$(nproc)
+CONFIGURE_FLAGS=(
+    --prefix=${PREFIX}
+    --includedir="${PREFIX}/include"
+    --libdir="${PREFIX}/lib"
+    LIBEVENT_LIBS="-L${PREFIX}/lib -levent"
+    LIBNCURSES_CFLAGS="-I${PREFIX}/include/ncurses"
+    LIBNCURSES_LIBS="-L${PREFIX}/lib -lncurses"
+    LIBTINFO_CFLAGS="-I${PREFIX}/include/ncurses"
+    LIBTINFO_LIBS="-L${PREFIX}/lib -ltinfo"
+    CFLAGS="-I${PREFIX}/include"
+    LDFLAGS="-L${PREFIX}/lib"
+    CPPFLAGS="-I${PREFIX}/include"
+)
+
+# Enable utf8proc on macOS if installed
+if $IS_MACOS; then
+    CONFIGURE_FLAGS+=(
+        --enable-utf8proc
+        LIBUTF8PROC_CFLAGS="-I${PREFIX}/include"
+        LIBUTF8PROC_LIBS="-L${PREFIX}/lib -lutf8proc"
+    )
+fi
+
+./configure "${CONFIGURE_FLAGS[@]}"
+
+if $IS_MACOS; then
+    make -j$(sysctl -n hw.ncpu)
+else
+    make -j$(nproc)
+fi
+
 make install
 
 rm -rf "$PREFIX/src"
