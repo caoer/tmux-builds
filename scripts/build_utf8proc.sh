@@ -17,7 +17,7 @@ wget "https://github.com/JuliaStrings/utf8proc/releases/download/v${UTF8PROC_VER
 tar xzf "utf8proc-${UTF8PROC_VERSION}.tar.gz"
 cd "utf8proc-${UTF8PROC_VERSION}"
 
-make -j$(sysctl -n hw.ncpu) libutf8proc.a
+make -j$(sysctl -n hw.ncpu)
 make prefix=${PREFIX} install
 
 rm -rf "$PREFIX/src"

@@ -40,7 +40,7 @@ if $IS_MACOS; then
     CONFIGURE_FLAGS+=(
         --enable-utf8proc
         LIBUTF8PROC_CFLAGS="-I${PREFIX}/include"
-        LIBUTF8PROC_LIBS="-L${PREFIX}/lib -lutf8proc"
+        LIBUTF8PROC_LIBS="${PREFIX}/lib/libutf8proc.a"
     )
 else
     CONFIGURE_FLAGS+=(
