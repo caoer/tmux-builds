@@ -1,0 +1,67 @@
+name: Build tmux
+
+on:
+  push:
+    # tags:
+    #   - 'v*'
+
+env:
+  PREFIX: /tmp/build
+
+jobs:
+  build:
+    name: Build tmux (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, arm64]
+        include:
+          - arch: x86_64
+            runs_on: macos-13
+          - arch: arm64
+            runs_on: macos-15
+
+
+    runs-on: ${{ matrix.runs_on }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Load version file
+        run: |
+          echo "Loading versions from versions.env"
+          source versions.env
+          echo "TMUX_VERSION=$TMUX_VERSION" >> "$GITHUB_ENV"
+          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
+          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
+
+      - name: Build libevent
+        run: ./scripts/build_libevent.sh
+
+      - name: Build ncurses
+        run: ./scripts/build_ncurses.sh
+
+      - name: Build tmux
+        run: ./scripts/build_tmux.sh
+
+      - name: Verify tmux binary
+        run: |
+          echo "Checking tmux binary"
+          file ${{ env.PREFIX }}/bin/tmux
+
+          echo "Creating a new tmux session"
+          ${{ env.PREFIX }}/bin/tmux new-session -d -s test
+
+          echo "Listing tmux sessions"
+          ${{ env.PREFIX }}/bin/tmux ls
+
+          echo "Killing test tmux session"
+          ${{ env.PREFIX }}/bin/tmux kill-session -t test
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmux-macos-${{ matrix.arch }}
+          path: ${{ env.PREFIX }}/bin/tmux
+

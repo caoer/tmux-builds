@@ -17,9 +17,10 @@ wget "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX
 tar xzf "tmux-${TMUX_VERSION}.tar.gz"
 cd "tmux-${TMUX_VERSION}"
 
+# TODO: Install and enable utf8proc on macos
 ./configure \
     --prefix=${PREFIX} \
-    --enable-static \
+    --disable-utf8proc \
     --includedir="${PREFIX}/include" \
     --libdir="${PREFIX}/lib" \
     CFLAGS="-I${PREFIX}/include" \
