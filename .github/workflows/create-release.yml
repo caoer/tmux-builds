@@ -18,10 +18,8 @@ jobs:
         include:
           - arch: x86_64
             runs_on: ubuntu-24.04
-            binary_name: tmux-linux-x86_64-musl
           - arch: arm64
             runs_on: ubuntu-24.04-arm
-            binary_name: tmux-linux-arm64-musl
 
     runs-on: ${{ matrix.runs_on }}
 
@@ -78,13 +76,16 @@ jobs:
 
       - name: Rename tmux binary
         run: |
-          cp ${{ env.PREFIX }}/bin/tmux ${{ matrix.binary_name }}
+          BINARY_NAME=tmux-${{ env.TMUX_VERSION }}-linux-${{ matrix.arch }}-musl
+          echo "BINARY_NAME=$BINARY_NAME" >> "$GITHUB_ENV"
+          cp ${{ env.PREFIX }}/bin/tmux ${BINARY_NAME}
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.binary_name }}
-          path: ${{ matrix.binary_name }}
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
 
   build-macos:
     name: Build tmux (macos-${{ matrix.arch }})
@@ -147,13 +148,15 @@ jobs:
 
       - name: Rename tmux binary
         run: |
-          cp ${{ env.PREFIX }}/bin/tmux ${{ matrix.binary_name }}
+          BINARY_NAME=tmux-${{ env.TMUX_VERSION }}-macos-${{ matrix.arch }}
+          echo "BINARY_NAME=$BINARY_NAME" >> "$GITHUB_ENV"
+          cp ${{ env.PREFIX }}/bin/tmux ${BINARY_NAME}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.binary_name }}
-          path: ${{ matrix.binary_name }}
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
 
   create-release:
     needs: [build-linux, build-macos]
