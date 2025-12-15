@@ -10,7 +10,7 @@ env:
   MUSL_VERSION: "1.2.5"
   LIBEVENT_VERSION: "2.1.12"
   NCURSES_VERSION: "6.5"
-  PREFIX: /build
+  PREFIX: /tmp/build
 
 jobs:
   build:
@@ -56,6 +56,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tmux-linux-${{ matrix.arch }}
+          name: tmux-linux-${{ matrix.arch }}-musl
           path: ${{ env.PREFIX }}/bin/tmux
 
