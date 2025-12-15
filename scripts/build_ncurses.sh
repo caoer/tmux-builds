@@ -31,6 +31,7 @@ cd "ncurses-${NCURSES_VERSION}"
     --without-manpages \
     --without-debug \
     --disable-lib-suffixes \
+    --disable-db-install \
     --with-termlib \
     --with-default-terminfo-dir=/usr/share/terminfo \
     --with-terminfo-dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo
