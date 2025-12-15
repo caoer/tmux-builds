@@ -1,4 +1,4 @@
-name: Build tmux
+name: Build tmux and create release
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-linux:
-    name: Build tmux (${{ matrix.arch }})
+    name: Build tmux (linux-${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +81,7 @@ jobs:
           path: ${{ env.PREFIX }}/bin/tmux
 
   build-macos:
-    name: Build tmux (${{ matrix.arch }})
+    name: Build tmux (macos-${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
