@@ -1,6 +1,7 @@
 services:
   tmux-release-builder:
     image: tmux-release-builder
+    container_name: tmux-release-builder
     build:
       context: .
       args:
