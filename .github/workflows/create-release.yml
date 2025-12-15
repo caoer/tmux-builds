@@ -76,7 +76,7 @@ jobs:
 
       - name: Rename tmux binary
         run: |
-          BINARY_NAME=tmux-${{ env.TMUX_VERSION }}-linux-${{ matrix.arch }}-musl
+          BINARY_NAME=tmux-v${{ env.TMUX_VERSION }}-linux-${{ matrix.arch }}-musl
           echo "BINARY_NAME=$BINARY_NAME" >> "$GITHUB_ENV"
           cp ${{ env.PREFIX }}/bin/tmux ${BINARY_NAME}
 
@@ -148,7 +148,7 @@ jobs:
 
       - name: Rename tmux binary
         run: |
-          BINARY_NAME=tmux-${{ env.TMUX_VERSION }}-macos-${{ matrix.arch }}
+          BINARY_NAME=tmux-v${{ env.TMUX_VERSION }}-macos-${{ matrix.arch }}
           echo "BINARY_NAME=$BINARY_NAME" >> "$GITHUB_ENV"
           cp ${{ env.PREFIX }}/bin/tmux ${BINARY_NAME}
 
