@@ -1,14 +1,11 @@
 name: Build tmux
 
 on:
-  workflow_dispatch:
-  # TODO: Make tmux version an input parameter
-  #   inputs:
-  #     tmux_version:
-  #       description: "tmux version to build (e.g. 3.3a)"
-  #       required: true
+  push:
+  # TODO: Once working, dispatch workflow on tag creation
 
 env:
+  # TODO: Define these in a separate file
   TMUX_VERSION: "3.6a"
   MUSL_VERSION: "1.2.5"
   LIBEVENT_VERSION: "2.1.12"
@@ -17,56 +14,48 @@ env:
 
 jobs:
   build:
-    name: Build tmux (${{ matrix.triplet }})
-    runs-on: ubuntu-latest
-
+    name: Build tmux (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
+        arch: [x86_64, arm64 ]
         include:
-          - platform: linux/amd64
-            arch: amd64
-            triplet: x86_64-linux-musl
-          - platform: linux/arm64
-            arch: arm64
-            triplet: aarch64-linux-musl
-          - platform: linux/arm/v7
-            arch: armv7
-            triplet: arm-linux-musleabihf
+          - arch: x86_64
+            runs_on: ubuntu-24.04
+          - arch: arm64
+            runs_on: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runs_on }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build tmux for ${{ matrix.platform }}
+      - name: Build musl
         run: |
-          docker buildx build \
-            --platform ${{ matrix.platform }} \
-            --build-arg TMUX_VERSION=${TMUX_VERSION} \
-            --build-arg MUSL_VERSION=${MUSL_VERSION} \
-            --build-arg LIBEVENT_VERSION=${LIBEVENT_VERSION} \
-            --build-arg NCURSES_VERSION=${NCURSES_VERSION} \
-            --build-arg PREFIX=${PREFIX} \
-            --output type=local,dest=out \
-            .
+          ./scripts/build_musl.sh
+          echo "CC=${PREFIX}/bin/musl-gcc -static" >> "$GITHUB_ENV"
 
-      - name: Rename artifact
+      - name: Build libevent
+        run: ./scripts/build_libevent.sh
+
+      - name: Build ncurses
+        run: ./scripts/build_ncurses.sh
+
+      - name: Build tmux
+        run: ./scripts/build_tmux.sh
+
+      - name: Verify tmux binary
         run: |
-          mkdir -p artifacts
-          cp out/artifacts/tmux \
-             artifacts/tmux-${TMUX_VERSION}-${{ matrix.triplet }}
-          ls -l artifacts/
+          file ${{ env.PREFIX }}/bin/tmux
+          ldd ${{ env.PREFIX }}/bin/tmux || true
+          ${{ env.PREFIX }}/bin/tmux new-session -d -s test
+          ${{ env.PREFIX }}/bin/tmux ls
+          ${{ env.PREFIX }}/bin/tmux kill-session -t test
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tmux-${{ env.TMUX_VERSION }}-x86_64-linux-musl
-          path: artifacts/tmux-${{ env.TMUX_VERSION }}-x86_64-linux-musl
-          if-no-files-found: error
+          name: tmux-linux-${{ matrix.arch }}
+          path: ${{ env.PREFIX }}/bin/tmux
 
