@@ -36,12 +36,15 @@ CONFIGURE_FLAGS=(
     CPPFLAGS="-I${PREFIX}/include"
 )
 
-# Enable utf8proc on macOS if installed
 if $IS_MACOS; then
     CONFIGURE_FLAGS+=(
         --enable-utf8proc
         LIBUTF8PROC_CFLAGS="-I${PREFIX}/include"
         LIBUTF8PROC_LIBS="-L${PREFIX}/lib -lutf8proc"
+    )
+else
+    CONFIGURE_FLAGS+=(
+        --enable-static
     )
 fi
 
