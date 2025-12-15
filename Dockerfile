@@ -29,7 +29,7 @@ RUN /scripts/build_libevent.sh
 RUN /scripts/build_ncurses.sh
 RUN /scripts/build_tmux.sh
 
-FROM alpine:latest AS exporter
+FROM debian:bookworm-slim AS exporter
 ARG PREFIX=/build
 
 COPY --from=builder ${PREFIX}/bin/tmux /artifacts/tmux
