@@ -41,9 +41,36 @@ jobs:
         run: |
           echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
+  check-changes:
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      build_needed: ${{ steps.check.outputs.build_needed }}
+      tmux_sha: ${{ steps.check.outputs.tmux_sha }}
+    if: ${{ needs.setup.outputs.build_type == 'nightly' }}
+    steps:
+      - name: Fetch latest tmux master
+        id: check
+        run: |
+          git clone --depth 1 https://github.com/tmux/tmux.git tmux-src
+          cd tmux-src
+          HEAD_SHA=$(git rev-parse HEAD)
+          echo "tmux_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+          # Get last nightly release SHA (if it exists)
+          LAST_SHA=$(gh release view nightly --json body -q '.body' 2>/dev/null | grep -oE 'SHA: [0-9a-f]+' | cut -d' ' -f2 || echo "")
+          if [ "$HEAD_SHA" = "$LAST_SHA" ]; then
+            echo "No changes since last nightly, skipping build."
+            echo "build_needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New commit detected, building..."
+            echo "build_needed=true" >> "$GITHUB_OUTPUT"
+
+
   build-linux:
     name: Build tmux (linux-${{ matrix.arch }})
-    needs: setup
+    needs: [setup, check-changes]
+    if: ${{ needs.setup.outputs.build_type == 'release' || needs.check-changes.outputs.build_needed == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -114,7 +141,8 @@ jobs:
 
   build-macos:
     name: Build tmux (macos-${{ matrix.arch }})
-    needs: setup
+    needs: [setup, check-changes]
+    if: ${{ needs.setup.outputs.build_type == 'release' || needs.check-changes.outputs.build_needed == 'true' }}
     strategy:
       fail-fast: false
       matrix:
