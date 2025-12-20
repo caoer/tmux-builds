@@ -12,8 +12,10 @@ ENV PREFIX=${PREFIX}
 
 RUN apt-get update && \
     apt-get install -y \
+        automake \
         bison \
         build-essential \
+        git \
         tar \
         pkg-config \
         wget && \
