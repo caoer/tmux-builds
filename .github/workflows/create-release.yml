@@ -14,8 +14,36 @@ env:
   PREFIX: /tmp/build
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      build_type: ${{ steps.set_type.outputs.build_type }}
+    steps:
+      - name: Determine build type
+        id: set_type
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "build_type=release" >> $GITHUB_OUTPUT
+          else
+            echo "build_type=nightly" >> $GITHUB_OUTPUT
+
+      - name: Load version file
+        run: |
+          echo "Loading versions from versions.env"
+          source versions.env
+          echo "TMUX_VERSION=$TMUX_VERSION" >> "$GITHUB_ENV"
+          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
+          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
+          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
+
+      - name: Override tmux version for nightly builds
+        if: ${{ steps.set_type.outputs.build_type == 'nightly' }}
+        run: |
+          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
+
   build-linux:
     name: Build tmux (linux-${{ matrix.arch }})
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -43,15 +71,6 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Load version file
-        run: |
-          echo "Loading versions from versions.env"
-          source versions.env
-          echo "TMUX_VERSION=$TMUX_VERSION" >> "$GITHUB_ENV"
-          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
-          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
-          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
 
       - name: Build musl
         run: |
@@ -95,6 +114,7 @@ jobs:
 
   build-macos:
     name: Build tmux (macos-${{ matrix.arch }})
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -121,15 +141,6 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Load version file
-        run: |
-          echo "Loading versions from versions.env"
-          source versions.env
-          echo "TMUX_VERSION=$TMUX_VERSION" >> "$GITHUB_ENV"
-          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
-          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
-          echo "UTF8PROC_VERSION=$UTF8PROC_VERSION" >> "$GITHUB_ENV"
 
       - name: Build libevent
         run: ./scripts/build_libevent.sh
