@@ -35,13 +35,15 @@ jobs:
     outputs:
       build_needed: ${{ steps.check.outputs.build_needed }}
       tmux_sha: ${{ steps.check.outputs.tmux_sha }}
-    if: ${{ needs.setup.outputs.build_type == 'nightly' }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Fetch latest tmux master
         id: check
+        # We cannot skip the entire job in a release build because subsequent are waiting for it.
+        # We can skip all steps inside the job though.
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
         run: |
           git clone --depth 1 https://github.com/tmux/tmux.git
           cd tmux
@@ -49,9 +51,11 @@ jobs:
           echo "tmux_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repo
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
         uses: actions/checkout@v4
 
       - name: Determine if build is needed
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
         env:
           HEAD_SHA: ${{ steps.check.outputs.tmux_sha }}
         run: |
