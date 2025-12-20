@@ -96,10 +96,8 @@ jobs:
         include:
           - arch: x86_64
             runs_on: macos-15-intel
-            binary_name: tmux-macos-x86_64
           - arch: arm64
             runs_on: macos-15
-            binary_name: tmux-macos-arm64
 
 
     runs-on: ${{ matrix.runs_on }}
