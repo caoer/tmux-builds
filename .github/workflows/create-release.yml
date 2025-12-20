@@ -19,9 +19,6 @@ jobs:
     outputs:
       build_type: ${{ steps.set_type.outputs.build_type }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
       - name: Determine build type
         id: set_type
         run: |
@@ -30,25 +27,6 @@ jobs:
           else
             echo "build_type=nightly" >> $GITHUB_OUTPUT
           fi
-
-      - name: Load version file
-        run: |
-          echo "Loading versions from versions.env"
-          source versions.env
-          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
-          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
-          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
-
-      - if: ${{ steps.set_type.outputs.build_type == 'release' }}
-        name: Set TMUX_VERSION for release
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Set TMUX_VERSION for nightly
-        if: ${{ steps.set_type.outputs.build_type == 'nightly' }}
-        run: |
-          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
 
   check-changes:
@@ -111,6 +89,25 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Load version file
+        run: |
+          echo "Loading versions from versions.env"
+          source versions.env
+          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
+          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
+          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
+
+      - if: ${{ needs.setup.outputs.build_type == 'release' }}
+        name: Set TMUX_VERSION for release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Set TMUX_VERSION for nightly
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
+        run: |
+          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
       - name: Build musl
         run: |
@@ -176,7 +173,6 @@ jobs:
           - arch: arm64
             runs_on: macos-15
 
-
     runs-on: ${{ matrix.runs_on }}
 
     steps:
@@ -190,6 +186,26 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Load version file
+        run: |
+          echo "Loading versions from versions.env"
+          source versions.env
+          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
+          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
+          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
+          echo "UTF8PROC_VERSION=$UTF8PROC_VERSION" >> "$GITHUB_ENV"
+
+      - if: ${{ needs.setup.outputs.build_type == 'release' }}
+        name: Set TMUX_VERSION for release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Set TMUX_VERSION for nightly
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
+        run: |
+          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
       - name: Build libevent
         run: ./scripts/build_libevent.sh
@@ -242,10 +258,21 @@ jobs:
 
   collect-licenses:
     runs-on: ubuntu-latest
-    needs: [check-changes]
+    needs: [setup, check-changes]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - if: ${{ needs.setup.outputs.build_type == 'release' }}
+        name: Set TMUX_VERSION for release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Set TMUX_VERSION for nightly
+        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
+        run: |
+          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
       - name: Collect licenses
         run: |
