@@ -32,7 +32,11 @@ wget -q "https://raw.githubusercontent.com/JuliaStrings/utf8proc/v${UTF8PROC_VER
 
 # tmux
 echo "Collecting tmux license..."
-wget -q "https://raw.githubusercontent.com/tmux/tmux/${TMUX_VERSION}/COPYING" -O "$PREFIX/licenses/COPYING.tmux"
+if [[ "${TMUX_VERSION}" == "nightly" ]]; then
+    wget -q "https://raw.githubusercontent.com/tmux/tmux/master/COPYING" -O "$PREFIX/licenses/COPYING.tmux"
+else
+    wget -q "https://raw.githubusercontent.com/tmux/tmux/${TMUX_VERSION}/COPYING" -O "$PREFIX/licenses/COPYING.tmux"
+fi
 
 # Create archive
 echo "Creating archive..."
