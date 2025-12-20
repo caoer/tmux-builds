@@ -155,8 +155,24 @@ jobs:
           name: ${{ env.ARCHIVE_NAME }}
           path: ${{ env.ARCHIVE_NAME }}
 
+  collect-licenses:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Collect licenses
+        run: |
+          ./scripts/collect_licenses.sh
+
+      - name: Upload licenses artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LICENSES.tar.gz
+          path: ${{ env.PREFIX }}/LICENSES.tar.gz
+
   create-release:
-    needs: [build-linux, build-macos]
+    needs: [build-linux, build-macos, collect-licenses]
     runs-on: ubuntu-latest
     permissions:
       contents: write
