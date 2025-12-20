@@ -228,7 +228,7 @@ jobs:
           path: ${{ env.PREFIX }}/LICENSES.tar.gz
 
   create-release:
-    needs: [build-linux, build-macos, collect-licenses]
+    needs: [setup, check-changes, build-linux, build-macos, collect-licenses]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -238,6 +238,17 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: "dist/*"
+      - name: Create release
+        env:
+          BUILD_TYPE: ${{ needs.setup.outputs.build_type }}
+          TMUX_SHA: ${{ needs.check-changes.outputs.tmux_sha }}
+        run: |
+          if [ "$BUILD_TYPE" = "nightly" ]; then
+            NOTES="tmux nighly\nSHA: $TMUX_SHA"
+            gh release delete nightly --yes || true
+            gh release create nightly --prerelease --notes "$NOTES" dist/*
+          else
+            NOTES="tmux version $GITHUB_REF_NAME"
+            gh release create $GITHUB_REF_NAME --notes "$NOTES" dist/*
+          fi
+
