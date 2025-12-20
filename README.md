@@ -17,20 +17,34 @@ Currently, the following platforms are supported:
 
 ### Local Build Instructions
 
-For Linux targets, you can build a tmux binary locally using Docker.
-Set the desired tmux and dependency versions in `versions.env`.
-Then run the following commands:
+#### Via Docker (Linux only)
+
+If required, adjust the dependency versions in `versions.env`.
+The tmux version can be set via the `TMUX_VERSION` build argument.
+Pass it via the `--build-arg` option 
 
 ```bash
-docker compose build
+docker compose build --build-arg TMUX_VERSION=3.5a
+```
 
+or set it via an environment variable:
+
+```bash
+TMUX_VERSION=3.5a docker compose build
+```
+
+To extract the built tmux binary, run the following commands:
+
+```bash
 docker compose create tmux-release-builder
 docker cp tmux-release-builder:/artifacts ./artifacts
 docker compose rm tmux-release-builder
 ```
 
-On macOS, you can build tmux directly on your machine using the scripts provided in the `scripts/` directory.
-See the GitHub Actions workflow files in the `.github/workflows/` directory for reference on how to use these scripts.
+#### Via Build Scripts
+
+You can alternatively build tmux directly on your machine using the scripts provided in the `scripts/` directory.
+See the build stage for you platform in the [GitHub Actions workflow](.github/workflows/create-release.yml) reference on how to use these scripts.
 
 ### Acknowledgments
 
