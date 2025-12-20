@@ -3,7 +3,6 @@ services:
     image: tmux-release-builder
     container_name: tmux-release-builder
     build:
-      context: .
       args:
         - TMUX_VERSION=${TMUX_VERSION}
         - MUSL_VERSION=${MUSL_VERSION}

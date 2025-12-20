@@ -1,6 +1,9 @@
 FROM debian:bookworm-slim AS builder
 
 ARG TMUX_VERSION
+ENV TMUX_VERSION=${TMUX_VERSION}
+
+RUN test -n "${TMUX_VERSION}" || (echo "TMUX_VERSION build argument is required." >&2; exit 1)
 
 ARG MUSL_VERSION
 ARG LIBEVENT_VERSION
@@ -8,7 +11,6 @@ ARG NCURSES_VERSION
 ARG PREFIX
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PREFIX=${PREFIX}
 
 RUN apt-get update && \
     apt-get install -y \
