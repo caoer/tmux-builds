@@ -1,4 +1,4 @@
-name: Build tmux and create release
+name: create-release
 
 on:
   # Create a new release
@@ -19,13 +19,17 @@ jobs:
     outputs:
       build_type: ${{ steps.set_type.outputs.build_type }}
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Determine build type
         id: set_type
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+          if [ "${{ github.event_name }}" = "push" ]; then
             echo "build_type=release" >> $GITHUB_OUTPUT
           else
             echo "build_type=nightly" >> $GITHUB_OUTPUT
+          fi
 
       - name: Load version file
         run: |
@@ -46,6 +50,7 @@ jobs:
         run: |
           echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
 
+
   check-changes:
     runs-on: ubuntu-latest
     needs: setup
@@ -57,9 +62,9 @@ jobs:
       - name: Fetch latest tmux master
         id: check
         run: |
-          git clone --depth 1 https://github.com/tmux/tmux.git tmux-src
-          cd tmux-src
-          HEAD_SHA=$(git rev-parse HEAD)
+          git clone --depth 1 https://github.com/tmux/tmux.git
+          cd tmux
+          HEAD_SHA=$(git rev-parse --short=8 HEAD)
           echo "tmux_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
           # Get last nightly release SHA (if it exists)
@@ -70,6 +75,7 @@ jobs:
           else
             echo "New commit detected, building..."
             echo "build_needed=true" >> "$GITHUB_OUTPUT"
+          fi
 
 
   build-linux:
@@ -137,7 +143,7 @@ jobs:
       - name: Determine archive name
         id: archive_name
         run: |
-          if [ "{{ needs.setup.outputs.build_type }}" = "nightly" ]; then
+          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
             echo "archive_name=tmux-${{ needs.check-changes.outputs.tmux_sha }}-linux-${{ matrix.arch }}-musl.tar.gz" >> "$GITHUB_OUTPUT"
           else
             echo "archive_name=tmux-v${{ github.ref_name }}-linux-${{ matrix.arch }}-musl.tar.gz" >> "$GITHUB_OUTPUT"
@@ -152,6 +158,7 @@ jobs:
         with:
           name: ${{ steps.archive_name.outputs.archive_name }}
           path: ${{ steps.archive_name.outputs.archive_name }}
+
 
   build-macos:
     name: Build tmux (macos-${{ matrix.arch }})
@@ -179,9 +186,7 @@ jobs:
           brew install \
               automake \
               bison \
-              git \
-              pkg-config \
-              wget
+              git
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -218,7 +223,7 @@ jobs:
       - name: Determine archive name
         id: archive_name
         run: |
-          if [ "{{ needs.setup.outputs.build_type }}" = "nightly" ]; then
+          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
             echo "archive_name=tmux-${{ needs.check-changes.outputs.tmux_sha }}-macos-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
           else
             echo "archive_name=tmux-v${{ github.ref_name }}-macos-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
@@ -234,8 +239,10 @@ jobs:
           name: ${{ steps.archive_name.outputs.archive_name }}
           path: ${{ steps.archive_name.outputs.archive_name }}
 
+
   collect-licenses:
     runs-on: ubuntu-latest
+    needs: [check-changes]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -250,12 +257,18 @@ jobs:
           name: LICENSES.tar.gz
           path: ${{ env.PREFIX }}/LICENSES.tar.gz
 
+
   create-release:
     needs: [setup, check-changes, build-linux, build-macos, collect-licenses]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Clone Repo
+        uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
@@ -267,11 +280,11 @@ jobs:
           TMUX_SHA: ${{ needs.check-changes.outputs.tmux_sha }}
         run: |
           if [ "$BUILD_TYPE" = "nightly" ]; then
-            NOTES="tmux nighly\nSHA: $TMUX_SHA"
+            NOTES="Nightly static builds of tmux (SHA: $TMUX_SHA) for Linux (musl) and macOS."
             gh release delete nightly --yes || true
             gh release create nightly --prerelease --notes "$NOTES" dist/*
           else
-            NOTES="tmux version $GITHUB_REF_NAME"
+            NOTES="Static builds of tmux version ${GITHUB_REF_NAME#v} for Linux (musl) and macOS."
             gh release create $GITHUB_REF_NAME --notes "$NOTES" dist/*
           fi
 
