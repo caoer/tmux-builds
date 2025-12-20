@@ -31,12 +31,17 @@ jobs:
         run: |
           echo "Loading versions from versions.env"
           source versions.env
-          echo "TMUX_VERSION=$TMUX_VERSION" >> "$GITHUB_ENV"
           echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
           echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
           echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
 
-      - name: Override tmux version for nightly builds
+      - if: ${{ steps.set_type.outputs.build_type == 'release' }}
+        name: Set TMUX_VERSION for release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Set TMUX_VERSION for nightly
         if: ${{ steps.set_type.outputs.build_type == 'nightly' }}
         run: |
           echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
