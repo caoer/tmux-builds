@@ -20,7 +20,7 @@ jobs:
       is_preview: ${{ steps.set_type.outputs.is_preview }}
       tmux_version: ${{ steps.meta.outputs.tmux_version }}
       release_tag: ${{ steps.meta.outputs.release_tag }}
-      upstream_changed: ${{ steps.tmux_head.outputs.upstream_changed }}
+      upstream_changed: ${{ steps.check_changes.outputs.upstream_changed }}
       upstream_head_sha: ${{ steps.tmux_head.outputs.upstream_head_sha }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
             echo "tmux_version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
-      - name: Fetch latest tmux master
+      - name: Get tmux upstream HEAD SHA
         id: tmux_head
         if: ${{ steps.set_type.outputs.is_preview == 'true' }}
         run: |
@@ -61,6 +61,7 @@ jobs:
 
       - name: Determine if build is needed
         if: ${{ steps.set_type.outputs.is_preview == 'true' }}
+        id: check_changes
         env:
           HEAD_SHA: ${{ steps.tmux_head.outputs.upstream_head_sha }}
         run: |
@@ -221,9 +222,6 @@ jobs:
           path: dist
 
       - name: Create release
-        env:
-          IS_PREVIEW: ${{ needs.setup.outputs.is_preview }}
-          TMUX_SHA: ${{ needs.setup.outputs.upstream_head_sha }}
         run: |
           if [ "$IS_PREVIEW" = "true" ]; then
             TITLE="tmux preview build (SHA: $TMUX_SHA)"
