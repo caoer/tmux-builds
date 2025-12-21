@@ -149,22 +149,7 @@ jobs:
 
       - name: Verify tmux binary
         run: |
-          echo "Checking tmux binary"
-          file ${{ env.PREFIX }}/bin/tmux
-
-          if [ "${{ matrix.os }}" = "macos" ]; then
-            echo "Listing dynamic libraries linked to tmux"
-            otool -L ${{ env.PREFIX }}/bin/tmux
-          fi
-
-          echo "Creating a new tmux session"
-          ${{ env.PREFIX }}/bin/tmux new-session -d -s test
-
-          echo "Listing tmux sessions"
-          ${{ env.PREFIX }}/bin/tmux ls
-
-          echo "Killing test tmux session"
-          ${{ env.PREFIX }}/bin/tmux kill-session -t test
+          ./scripts/verify_tmux.sh
 
       - name: Determine archive name
         id: archive_name
