@@ -61,26 +61,34 @@ jobs:
           fi
 
 
-  build-linux:
-    name: Build tmux (linux-${{ matrix.arch }})
+  build:
+    name: Build tmux (${{ matrix.os }}-${{ matrix.arch }})
     needs: setup
-    if: ${{ needs.setup.outputs.build_type == 'release' || needs.setup.outputs.build_needed == 'true' }}
-    outputs:
-      archive_name: ${{ steps.archive_name.outputs.archive_name }}
+    if: ${{ needs.setup.outputs.build_type == 'release' ||
+            needs.setup.outputs.build_needed == 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, arm64 ]
         include:
-          - arch: x86_64
+          - os: linux
+            arch: x86_64
             runs_on: ubuntu-24.04
-          - arch: arm64
+          - os: linux
+            arch: arm64
             runs_on: ubuntu-24.04-arm
+          - os: macos
+            arch: x86_64
+            runs_on: macos-15-intel
+          - os: macos
+            arch: arm64
+            runs_on: macos-15
+
 
     runs-on: ${{ matrix.runs_on }}
 
     steps:
-      - name: Install build dependencies
+      - name: Install build dependencies (Linux)
+        if: matrix.os == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -92,96 +100,8 @@ jobs:
               pkg-config \
               wget
 
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Load version file
-        run: |
-          echo "Loading versions from versions.env"
-          source versions.env
-          echo "MUSL_VERSION=$MUSL_VERSION" >> "$GITHUB_ENV"
-          echo "LIBEVENT_VERSION=$LIBEVENT_VERSION" >> "$GITHUB_ENV"
-          echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
-
-      - if: ${{ needs.setup.outputs.build_type == 'release' }}
-        name: Set TMUX_VERSION for release
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Set TMUX_VERSION for nightly
-        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
-        run: |
-          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
-
-      - name: Build musl
-        run: |
-          ./scripts/build_musl.sh
-          echo "CC=${PREFIX}/bin/musl-gcc -static" >> "$GITHUB_ENV"
-
-      - name: Build libevent
-        run: ./scripts/build_libevent.sh
-
-      - name: Build ncurses
-        run: ./scripts/build_ncurses.sh
-
-      - name: Build tmux
-        run: ./scripts/build_tmux.sh
-
-      - name: Verify tmux binary
-        run: |
-          echo "Checking tmux binary"
-          file ${{ env.PREFIX }}/bin/tmux
-
-          echo "Creating a new tmux session"
-          ${{ env.PREFIX }}/bin/tmux new-session -d -s test
-
-          echo "Listing tmux sessions"
-          ${{ env.PREFIX }}/bin/tmux ls
-
-          echo "Killing test tmux session"
-          ${{ env.PREFIX }}/bin/tmux kill-session -t test
-
-      - name: Determine archive name
-        id: archive_name
-        run: |
-          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
-            echo "archive_name=tmux-${{ needs.setup.outputs.tmux_sha }}-linux-${{ matrix.arch }}-musl.tar.gz" >> "$GITHUB_OUTPUT"
-          else
-            echo "archive_name=tmux-${{ github.ref_name }}-linux-${{ matrix.arch }}-musl.tar.gz" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Archive tmux binary
-        run: |
-          tar -czf "${{ steps.archive_name.outputs.archive_name }}" -C ${{ env.PREFIX }}/bin tmux
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.archive_name.outputs.archive_name }}
-          path: ${{ steps.archive_name.outputs.archive_name }}
-
-
-  build-macos:
-    name: Build tmux (macos-${{ matrix.arch }})
-    needs: setup
-    if: ${{ needs.setup.outputs.build_type == 'release' || needs.setup.outputs.build_needed == 'true' }}
-    outputs:
-      archive_name: ${{ steps.archive_name.outputs.archive_name }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86_64, arm64]
-        include:
-          - arch: x86_64
-            runs_on: macos-15-intel
-          - arch: arm64
-            runs_on: macos-15
-
-    runs-on: ${{ matrix.runs_on }}
-
-    steps:
-      - name: Install build dependencies
+      - name: Install build dependencies (macOS)
+        if: matrix.os == 'macos'
         run: |
           brew update
           brew install \
@@ -192,7 +112,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Load version file
+      - name: Set versions
         run: |
           echo "Loading versions from versions.env"
           source versions.env
@@ -201,16 +121,18 @@ jobs:
           echo "NCURSES_VERSION=$NCURSES_VERSION" >> "$GITHUB_ENV"
           echo "UTF8PROC_VERSION=$UTF8PROC_VERSION" >> "$GITHUB_ENV"
 
-      - if: ${{ needs.setup.outputs.build_type == 'release' }}
-        name: Set TMUX_VERSION for release
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
+            echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+          fi
 
-      - name: Set TMUX_VERSION for nightly
-        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
+      - name: Build musl
+        if: matrix.os == 'linux'
         run: |
-          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
+          ./scripts/build_musl.sh
+          echo "CC=${PREFIX}/bin/musl-gcc -static" >> "$GITHUB_ENV"
 
       - name: Build libevent
         run: ./scripts/build_libevent.sh
@@ -219,6 +141,7 @@ jobs:
         run: ./scripts/build_ncurses.sh
 
       - name: Build utf8proc
+        if: matrix.os == 'macos'
         run: ./scripts/build_utf8proc.sh
 
       - name: Build tmux
@@ -229,8 +152,10 @@ jobs:
           echo "Checking tmux binary"
           file ${{ env.PREFIX }}/bin/tmux
 
-          echo "Listing dynamic libraries linked to tmux"
-          otool -L ${{ env.PREFIX }}/bin/tmux
+          if [ "${{ matrix.os }}" = "macos" ]; then
+            echo "Listing dynamic libraries linked to tmux"
+            otool -L ${{ env.PREFIX }}/bin/tmux
+          fi
 
           echo "Creating a new tmux session"
           ${{ env.PREFIX }}/bin/tmux new-session -d -s test
@@ -245,9 +170,9 @@ jobs:
         id: archive_name
         run: |
           if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
-            echo "archive_name=tmux-${{ needs.setup.outputs.tmux_sha }}-macos-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
+            echo "archive_name=tmux-${{ needs.setup.outputs.tmux_sha }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
           else
-            echo "archive_name=tmux-${{ github.ref_name }}-macos-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
+            echo "archive_name=tmux-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Archive tmux binary
@@ -269,16 +194,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - if: ${{ needs.setup.outputs.build_type == 'release' }}
-        name: Set TMUX_VERSION for release
+      - name: Set TMUX_VERSION
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Set TMUX_VERSION for nightly
-        if: ${{ needs.setup.outputs.build_type == 'nightly' }}
-        run: |
-          echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
+          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
+            echo "TMUX_VERSION=nightly" >> "$GITHUB_ENV"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "TMUX_VERSION=$VERSION" >> "$GITHUB_ENV"
+          fi
 
       - name: Collect licenses
         run: |
@@ -292,7 +215,7 @@ jobs:
 
 
   create-release:
-    needs: [setup, build-linux, build-macos, collect-licenses]
+    needs: [setup, build, collect-licenses]
     runs-on: ubuntu-latest
     permissions:
       contents: write
