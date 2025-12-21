@@ -169,11 +169,12 @@ jobs:
       - name: Determine archive name
         id: archive_name
         run: |
-          if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
-            echo "archive_name=tmux-${{ needs.setup.outputs.tmux_sha }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
+         if [ "${{ needs.setup.outputs.build_type }}" = "nightly" ]; then
+            VERSION="${{ needs.setup.outputs.tmux_sha }}"
           else
-            echo "archive_name=tmux-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
+            VERSION="${GITHUB_REF_NAME}"
           fi
+          echo "archive_name=tmux-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
 
       - name: Archive tmux binary
         run: |
