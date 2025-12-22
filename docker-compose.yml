@@ -1,7 +1,7 @@
 services:
-  tmux-release-builder:
-    image: tmux-release-builder
-    container_name: tmux-release-builder
+  tmux-builder:
+    image: tmux-builder
+    container_name: tmux-builder
     build:
       args:
         - TMUX_VERSION=${TMUX_VERSION}

@@ -54,9 +54,9 @@ TMUX_VERSION=3.5a docker compose build
 Extract the binary:
 
 ```bash
-docker compose create tmux-release-builder
-docker cp tmux-release-builder:/artifacts ./artifacts
-docker compose rm tmux-release-builder
+docker compose create tmux-builder
+docker cp tmux-builder:/artifacts ./artifacts
+docker compose rm tmux-builder
 ```
 
 ### Via Build Scripts
