@@ -176,11 +176,11 @@ jobs:
           else
             VERSION="${GITHUB_REF_NAME#v}"
           fi
-          echo "archive_name=tmux-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "archive_name=tmux-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}.gz" >> "$GITHUB_OUTPUT"
 
       - name: Archive tmux binary
         run: |
-          tar -czf "${{ steps.archive_name.outputs.archive_name }}" -C ${{ env.PREFIX }}/bin tmux
+          gzip -c ${{ env.PREFIX }}/bin/tmux > ${{ steps.archive_name.outputs.archive_name }}
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
