@@ -33,6 +33,7 @@ CONFIGURE_FLAGS=(
     --prefix=${PREFIX}
     --includedir="${PREFIX}/include"
     --libdir="${PREFIX}/lib"
+    --enable-jemalloc
     LIBEVENT_LIBS="-L${PREFIX}/lib -levent"
     LIBNCURSES_CFLAGS="-I${PREFIX}/include/ncurses"
     LIBNCURSES_LIBS="-L${PREFIX}/lib -lncurses"
@@ -55,9 +56,12 @@ else
     )
 fi
 
-./configure "${CONFIGURE_FLAGS[@]}"
+PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig" ./configure "${CONFIGURE_FLAGS[@]}"
 
 if $IS_MACOS; then
+    # Force-load jemalloc to ensure all symbols are linked (needed for malloc interposition)
+    JEMALLOC_PATH="${PREFIX}/lib/libjemalloc.a"
+    perl -i -pe "s|-ljemalloc|-Wl,-force_load,$JEMALLOC_PATH|g" Makefile
     make -j$(sysctl -n hw.ncpu)
 else
     make -j$(nproc)
