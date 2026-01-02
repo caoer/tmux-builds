@@ -14,7 +14,7 @@ fi
 mkdir -p "$PREFIX/src"
 cd "$PREFIX/src"
 
-if [[ "${TMUX_VERSION}" == "preview" ]]; then
+if [[ "${TMUX_VERSION}" == "preview" || "${TMUX_VERSION}" == next-* ]]; then
     git clone https://github.com/tmux/tmux.git
     cd tmux
     sh autogen.sh

@@ -36,7 +36,7 @@ wget -q "https://raw.githubusercontent.com/jemalloc/jemalloc/${JEMALLOC_VERSION}
 
 # tmux
 echo "Collecting tmux license..."
-if [[ "${TMUX_VERSION}" == "preview" ]]; then
+if [[ "${TMUX_VERSION}" == "preview" || "${TMUX_VERSION}" == next-* ]]; then
     wget -q "https://raw.githubusercontent.com/tmux/tmux/master/COPYING" -O "$PREFIX/licenses/COPYING.tmux"
 else
     wget -q "https://raw.githubusercontent.com/tmux/tmux/${TMUX_VERSION}/COPYING" -O "$PREFIX/licenses/COPYING.tmux"
