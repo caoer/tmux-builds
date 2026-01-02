@@ -31,6 +31,9 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Detected push event, starting stable release build."
             echo "is_preview=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "Detected tag ref, starting stable release build."
+            echo "is_preview=false" >> $GITHUB_OUTPUT
           else
             echo "Detected scheduled or manual event, starting preview release build."
             echo "is_preview=true" >> $GITHUB_OUTPUT
